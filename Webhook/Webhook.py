@@ -23,7 +23,7 @@ class WXWork_SMS :
                 "markdown": {
                     "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" **<font color=\"warning\">**"+paramDic['ticketNum']+"**</font>\n" +  #title, # and words must there be a space
                         "#### **请相关同事注意，及时跟进！**\n" +  # bold：**words to be bolded**
-                        "> ["+paramDic['summary']+"]("+paramDic['linkFin']+") \n"   # reference：> referenced words# green：info、grey：# comment、orange：warning# color
+                        "> ["+paramDic['summary']+"]("+paramDic['linkFin']+") \n"   # reference：> referenced words# green：info、grey：#comment、orange：warning#color
                 }
             }
         elif paramDic['case'] == 1:
