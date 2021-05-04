@@ -10,13 +10,13 @@ class WXWork_SMS :
         headers = {"Content-Type" : "text/plain"}
         send_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=f198b262-1507-41b7-8951-55f18511e78a"
         send_data = {}
-        paramDic['user'] = user
-        paramDic['eventOpr'] = eventOpr
-        paramDic['ticketNum'] = ticketNum
-        paramDic['summary'] = summary
-        paramDic['linkFin'] = linkFin
-        paramDic['statusFrom'] = statusFrom
-        paramDic['comment'] = statusTo
+        #paramDic['user'] = user
+        #paramDic['eventOpr'] = eventOpr
+        #paramDic['ticketNum'] = ticketNum
+        #paramDic['summary'] = summary
+        #paramDic['linkFin'] = linkFin
+        #paramDic['statusFrom'] = statusFrom
+        #paramDic['comment'] = statusTo
         if paramDic['case'] == 0:
             send_data = {
                 "msgtype": "markdown",
@@ -81,30 +81,39 @@ def webhook():
         statusFrom = ''
         statusTo = ''
         if 'changelog' in data:
-            statusFrom = data['changelog'][0]['items'][0]['fromString']
+            statusFrom = data['changelog']['items']['fromString']
             statusTo = data['changelog']['items']['toString']
-        user = data['user']['displayName']
+        user = data['user']['displayName']  
         ticketNum = data['issue']['key']
         summary = data['issue']['fields']['summary']
         linkRaw = data['issue']['self']
         linkPrf,suf = linkRaw.split('rest',1)
         linkFin = linkPrf+"browse/"+ticketNum
         paramDic = {}
-        if eventOpr.find("issue_") != -1:
+        if eventOpr.find("issue_updated") != -1:           
             event,opr = eventOpr.split('_',1)
-            if event.find("create") != -1:
-                paramDic['case'] = 0
-            elif event.find("update") != -1:
+            event_type = data['issue_event_type_name'] 
+            if event.find("generic") != -1:
                 paramDic['case'] = 1
+                #event,opr = eventOpr.split('_',1)               
+            elif event.find("issue_commented") != -1:
+                paramDic['case'] = 3
+                opr = 'created'
+                paramDic['comment'] = data['comment']['body'] 
+            elif event.find("comment_edited") != -1:
+                paramDic['case'] = 4
+                opr = 'edited'
+                paramDic['comment'] = data['comment']['body']               
             else :
-                paramDic['case'] = 2
-        else:
+                paramDic['case'] = 5
+                opr = 'deleted'               
+        else:           
             event,opr = eventOpr.split('_',1)
             eventOpr = opr
             if event.find("delete") != -1:
-                paramDic['case'] = 4
+                paramDic['case'] = 2
             else :
-                paramDic['case'] = 3
+                paramDic['case'] = 0
         paramDic['user'] = user
         paramDic['eventOpr'] = eventOpr
         paramDic['ticketNum'] = ticketNum
@@ -112,7 +121,7 @@ def webhook():
         paramDic['linkFin'] = linkFin
         paramDic['statusFrom'] = statusFrom
         paramDic['statusTo'] = statusTo
-        paramDic['comment'] = data['comment']['body']
+        #paramDic['comment'] = data['comment']['body']
         sms = WXWork_SMS()
         sms.send_msg_markdown(paramDic)
         return '',200
