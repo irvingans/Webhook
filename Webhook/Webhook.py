@@ -30,8 +30,10 @@ class WXWork_SMS :
             send_data = {
                 "msgtype": "markdown",
                 "markdown": {
-                    "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" **<font color=\"warning\">**"+paramDic['ticketNum']+" from "+paramDic['statusFrom']
-                    +" to "+paramDic['statusTo']+"**</font>\n" +
+                    "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" **<font color=\"warning\">**"
+                        +paramDic['ticketNum']+" **</font>\n"+"from "+" **<font color=\"warning\">**"
+                        +paramDic['statusFrom']+"**</font>\n"
+                        +" to "+" **<font color=\"warning\">**"+paramDic['statusTo']+"**</font>\n"+
                         "#### **请相关同事注意，及时跟进！**\n" +
                         "> ["+paramDic['summary']+"]("+paramDic['linkFin']+") \n"
                 }
@@ -43,12 +45,14 @@ class WXWork_SMS :
                     "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" **<font color=\"warning\">**"+paramDic['ticketNum']+"**</font>\n"
                 }
             }
-        elif paramDic['case'] == 3:
+        elif (paramDic['case'] == 3 or paramDic['case'] == 4):
+            
             send_data = {
                 "msgtype": "markdown",
                 "markdown": {
                     "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" a comment in ticket **<font color=\"warning\">**"+paramDic['ticketNum']+"**</font>\n" +
                         "#### **请相关同事注意，及时跟进！**\n" +
+                        "> ["+paramDic['summary']+"]("+paramDic['linkFin']+") \n"+      
                         "> "+paramDic['comment']+"\n"
                 }
             }
@@ -56,10 +60,12 @@ class WXWork_SMS :
             send_data = {
                 "msgtype": "markdown",
                 "markdown": {
-                    "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" a comment in ticket **<font color=\"warning\">**"+paramDic['ticketNum']+"**</font>\n"
+                    "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" a comment in ticket **<font color=\"warning\">**"+paramDic['ticketNum']+"**</font>\n"+
+                        "> ["+paramDic['summary']+"]("+paramDic['linkFin']+") \n"
                 }
             }
-        
+       
+        #print(paramDic['case']) 
         res = requests.post(url = send_url, headers = headers, json = send_data)
         print(res.text)
  
@@ -81,8 +87,8 @@ def webhook():
         statusFrom = ''
         statusTo = ''
         if 'changelog' in data:
-            statusFrom = data['changelog']['items']['fromString']
-            statusTo = data['changelog']['items']['toString']
+            statusFrom = data['changelog']['items'][0]['fromString']
+            statusTo = data['changelog']['items'][0]['toString']
         user = data['user']['displayName']  
         ticketNum = data['issue']['key']
         summary = data['issue']['fields']['summary']
@@ -93,29 +99,37 @@ def webhook():
         if eventOpr.find("issue_updated") != -1:           
             event,opr = eventOpr.split('_',1)
             event_type = data['issue_event_type_name'] 
-            if event.find("generic") != -1:
+            if event_type.find("generic") != -1:
+                print('Case 1')
                 paramDic['case'] = 1
+                paramDic['eventOpr'] = opr
                 #event,opr = eventOpr.split('_',1)               
-            elif event.find("issue_commented") != -1:
+            elif event_type.find("issue_commented") != -1:
+                print('Case 3')
                 paramDic['case'] = 3
-                opr = 'created'
+                paramDic['eventOpr'] = 'created'
                 paramDic['comment'] = data['comment']['body'] 
-            elif event.find("comment_edited") != -1:
+            elif event_type.find("comment_edited") != -1:
+                print('Case 4')
                 paramDic['case'] = 4
-                opr = 'edited'
-                paramDic['comment'] = data['comment']['body']               
+                paramDic['eventOpr'] = 'edited'
+                paramDic['comment'] = data['comment']['body'] 
+                print(paramDic['comment'])              
             else :
+                print('Case 5')
                 paramDic['case'] = 5
-                opr = 'deleted'               
+                paramDic['eventOpr'] = 'deleted'               
         else:           
             event,opr = eventOpr.split('_',1)
-            eventOpr = opr
-            if event.find("delete") != -1:
+            paramDic['eventOpr'] = opr
+            if opr.find("delete") != -1:
+                print('Case 2')
                 paramDic['case'] = 2
             else :
+                print('Case 0')
                 paramDic['case'] = 0
         paramDic['user'] = user
-        paramDic['eventOpr'] = eventOpr
+        #paramDic['eventOpr'] = eventOpr
         paramDic['ticketNum'] = ticketNum
         paramDic['summary'] = summary
         paramDic['linkFin'] = linkFin
