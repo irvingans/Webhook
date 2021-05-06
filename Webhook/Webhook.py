@@ -31,7 +31,7 @@ class WXWork_SMS :
                 "msgtype": "markdown",
                 "markdown": {
                     "content": "# **"+paramDic['user']+" "+paramDic['eventOpr']+" **<font color=\"warning\">**"
-                        +paramDic['ticketNum']+" **</font>\n"+"from "+" **<font color=\"warning\">**"
+                        +paramDic['ticketNum']+" **</font>\n"+paramDic['field']+" from "+" **<font color=\"warning\">**"
                         +paramDic['statusFrom']+"**</font>\n"
                         +" to "+" **<font color=\"warning\">**"+paramDic['statusTo']+"**</font>\n"+
                         "#### **请相关同事注意，及时跟进！**\n" +
@@ -86,9 +86,11 @@ def webhook():
         eventOpr = data['webhookEvent']
         statusFrom = ''
         statusTo = ''
+        field = ''
         if 'changelog' in data:
             statusFrom = data['changelog']['items'][0]['fromString']
             statusTo = data['changelog']['items'][0]['toString']
+            field = data['changelog']['items'][0]['field']
         user = data['user']['displayName']  
         ticketNum = data['issue']['key']
         summary = data['issue']['fields']['summary']
@@ -99,7 +101,7 @@ def webhook():
         if eventOpr.find("issue_updated") != -1:           
             event,opr = eventOpr.split('_',1)
             event_type = data['issue_event_type_name'] 
-            if event_type.find("generic") != -1:
+            if (event_type.find("generic") != -1) or (event_type.find("issue_updated") != -1):
                 print('Case 1')
                 paramDic['case'] = 1
                 paramDic['eventOpr'] = opr
@@ -133,6 +135,7 @@ def webhook():
         paramDic['ticketNum'] = ticketNum
         paramDic['summary'] = summary
         paramDic['linkFin'] = linkFin
+        paramDic['field'] = field
         paramDic['statusFrom'] = statusFrom
         paramDic['statusTo'] = statusTo
         #paramDic['comment'] = data['comment']['body']
